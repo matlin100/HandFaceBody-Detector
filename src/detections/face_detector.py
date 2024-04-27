@@ -52,10 +52,15 @@ class FaceDetector:
             ok, box = tracker.update(frame)
             if ok:
                 x, y, w, h = [int(v) for v in box]
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                duration = int(current_time - self.face_times[tracker_id]['start'])
-                self.face_times[tracker_id]['duration'] = duration
-                cv2.putText(frame, f"Face {tracker_id}: {duration}s", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                if x >= 0 and y >= 0 and x + w < frame.shape[1] and y + h < frame.shape[0]:
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    duration = int(current_time - self.face_times[tracker_id]['start'])
+                    self.face_times[tracker_id]['duration'] = duration
+                    cv2.putText(frame, f"Face {tracker_id}: {duration}s", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                else:
+                    # Remove the tracker if the face goes out of the frame
+                    del self.trackers[tracker_id]
+                    del self.face_times[tracker_id]
 
         return frame
 

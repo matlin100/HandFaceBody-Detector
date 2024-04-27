@@ -1,28 +1,6 @@
 import cv2
 import mediapipe as mp
 
-def main():
-    video_capture = cv2.VideoCapture(0)  # Using webcam
-    people_detector = PeopleDetector()
-
-    while True:
-        success, frame = video_capture.read()
-        if not success:
-            break
-
-        frame = people_detector.detect_people(frame)
-
-        if frame is not None and frame.shape[0] > 0 and frame.shape[1] > 0:
-            cv2.imshow('People Detection', frame)
-        else:
-            print("Invalid frame. Skipping display.")
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    video_capture.release()
-    cv2.destroyAllWindows()
-
 class PeopleDetector:
     def __init__(self):
         self.mp_pose = mp.solutions.pose
@@ -42,5 +20,3 @@ class PeopleDetector:
             print("Invalid frame. Skipping people detection.")
             return None
 
-if __name__ == "__main__":
-    main()
