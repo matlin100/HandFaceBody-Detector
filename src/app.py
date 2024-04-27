@@ -1,38 +1,41 @@
 import cv2
-from hand_tracking import tracker
-from video_capture import capture
-from people_detection.detector import PeopleDetector  # Directly import the class
-from face_detection.detector import FaceDetector  # Directly import the class
 import time
+from src.detections.detector_init import initialize_face_detector, initialize_hand_tracker, initialize_people_detector, initialize_pose_detector
 
 def main():
-    video_path = 0  # = '/Users/yechezkelmatlin/PycharmProjects/track me/Screen Recording 2024-04-25 at 12.29.32.mov'
-    video_capture = capture.capture_video(video_path or 0)
-    # hand_tracker = tracker.HandTracker()
-    # people_detector = PeopleDetector()  # Use the directly imported class
-    face_detector = FaceDetector()  # Use the directly imported class
+    video_capture = cv2.VideoCapture(0)  # Using webcam
 
-    while video_capture.isOpened():
-        success, image = video_capture.read()
-        if not success:
-            print("Ignoring empty camera frame.")
-            continue
+    # Initialize detectors using functions from detector_init.py
+    face_detector = initialize_face_detector()
+    hand_tracker = initialize_hand_tracker()
+    pose_detector = initialize_pose_detector()
+    start_time = time.time()
 
-        # image = hand_tracker.process_frame(image)
-        # image = people_detector.detect_people(image)
-
-        # Get the current time in seconds
-        current_time = time.time()
-
-        current_time = time.time()
-        image = face_detector.detect_and_track_faces(image, current_time)  # Corrected method name
-        cv2.imshow('Processed Video', image)
-        if cv2.waitKey(5) & 0xFF == 27:  # Press 'Esc' to exit
+    while True:
+        ret, frame = video_capture.read()
+        if not ret:
+            print("Failed to capture video frame.")
             break
 
-    capture.release_video(video_capture)
-    capture.destroy_windows()
+        # Hand tracking
+        result = hand_tracker.process_frame(frame) if hand_tracker is not None else (frame,)
 
+        # Assuming result is a tuple and the frame is the first element
+        processed_frame = result[0] if result and isinstance(result, tuple) else None
+
+        # Display only if frame is valid
+        if processed_frame is not None and processed_frame.shape[0] > 0 and processed_frame.shape[1] > 0:
+            cv2.imshow('Multi-Object Detection', processed_frame)
+        else:
+            print("Invalid frame received. Skipping display.")
+
+        # Break the loop if 'q' is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            print("Terminating program.")
+            break
+
+    video_capture.release()
+    cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()
