@@ -1,8 +1,10 @@
 import cv2
+import mediapipe as mp
 
 class FaceDetector:
     def __init__(self):
-        self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.mp_face_detection = mp.solutions.face_detection
+        self.face_detection = self.mp_face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.5)
         self.trackers = {}
         self.face_times = {}
         self.last_update_time = {}
@@ -10,12 +12,17 @@ class FaceDetector:
 
     def detect_and_track_faces(self, frame, current_time):
         if current_time - self.last_update_time.get('detect', 0) > 5:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
+            results = self.face_detection.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             detected_faces = []
 
-            for (x, y, w, h) in faces:
-                detected_faces.append((x, y, w, h))
+            if results.detections:
+                for detection in results.detections:
+                    bounding_box = detection.location_data.relative_bounding_box
+                    x = int(bounding_box.xmin * frame.shape[1])
+                    y = int(bounding_box.ymin * frame.shape[0])
+                    w = int(bounding_box.width * frame.shape[1])
+                    h = int(bounding_box.height * frame.shape[0])
+                    detected_faces.append((x, y, w, h))
 
             for face_rect in detected_faces:
                 x, y, w, h = face_rect
